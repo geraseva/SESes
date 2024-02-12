@@ -99,22 +99,22 @@ def hausdorff_distance(x,y,single_directional=False):
         haus_y = D_ij.min(dim=0).max().sqrt()
         return  max(haus_x, haus_y)
     
-def bokov_distribution(x, r=1, reduction=None):
+def distribution(x, r=1, reduction=None):
     
     N=x.shape[0]
     x_i = LazyTensor(x[:, None, :])  # (N, 1, D)
     y_j = LazyTensor(x[None, :, :])  # (1, M, D)
     D_ij = ((x_i - y_j) ** 2).sum(-1)  # (N, M)
-    bok = (r**2-D_ij).step().sum(1).view(-1)
-    mean_bok=bok.sum()/bok.shape[0]
-    bok=bok-mean_bok
+    b = (r**2-D_ij).step().sum(1).view(-1)
+    mean_b=b.sum()/b.shape[0]
+    b=b-mean_b
 
     if reduction==None:
-        return bok
+        return b
     elif reduction=='std':
-        std_bok=((bok**2).sum()/bok.shape[0]).sqrt()
-        return std_bok
+        std_b=((b**2).sum()/b.shape[0]).sqrt()
+        return std_b
     elif reduction=='max':
-        max_bok=bok.abs().max()
+        max_bok=b.abs().max()
         return max_bok
 
