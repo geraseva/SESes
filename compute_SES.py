@@ -8,7 +8,6 @@ from plyfile import PlyData
 # radii for atoms in explicit case.
 radii = {}
 radii["N"] = "1.540000"
-radii["N"] = "1.540000"
 radii["O"] = "1.400000"
 radii["C"] = "1.740000"
 radii["H"] = "1.200000"
@@ -74,15 +73,15 @@ def output_pdb_as_xyzrn(pdbfilename, xyzrnfilename):
             if atomtype == "H":
                 if name in polarHydrogens[resname]:
                     color = "Blue"  # Polar hydrogens
-            coords = "{:.06f} {:.06f} {:.06f}".format(
-                atom.get_coord()[0], atom.get_coord()[1], atom.get_coord()[2]
-            )
-            insertion = "x"
-            if residue.get_id()[2] != " ":
-                insertion = residue.get_id()[2]
-            full_id = "{}_{:d}_{}_{}_{}_{}".format(
-                chain, residue.get_id()[1], insertion, resname, name, color
-            )
+        coords = "{:.06f} {:.06f} {:.06f}".format(
+            atom.get_coord()[0], atom.get_coord()[1], atom.get_coord()[2]
+        )
+        insertion = "x"
+        if residue.get_id()[2] != " ":
+            insertion = residue.get_id()[2]
+        full_id = "{}_{:d}_{}_{}_{}_{}".format(
+            chain, residue.get_id()[1], insertion, resname, name, color
+        )
         if coords is not None:
             outfile.write(coords + " " + radii[atomtype] + " 1 " + full_id + "\n")
     outfile.close()
@@ -162,19 +161,10 @@ def computeMSMS(pdb_file):
     stdout, stderr = p2.communicate()
 
     vertices, faces, normals, names = read_msms(file_base)
-    areas = {}
-    ses_file = open(file_base+".area")
-    next(ses_file) # ignore header line
-    for line in ses_file:
-        fields = line.split()
-        areas[fields[3]] = fields[1]
-
 
     # Remove temporary files. 
-    os.remove(file_base+'.area')
-    os.remove(file_base+'.xyzrn')
-    os.remove(file_base+'.vert')
-    os.remove(file_base+'.face')
+    os.system(f'rm {file_base}*')
+
     return vertices, faces, normals
 
 def computeEDTSurf(pdb_file):
