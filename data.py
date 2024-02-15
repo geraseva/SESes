@@ -6,6 +6,7 @@ from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
+import pickle
 
 from Bio.PDB import PDBParser
 
@@ -80,7 +81,8 @@ class AtomSurfaceDataset(Dataset):
         if self.storage==None or not os.path.exists(self.storage):
             self.process()
         else:
-            self.data=torch.load(self.storage)
+            with open(self.storage,'rb') as f:  
+                self.data=pickle.load(f)
             self.list=self.data['indexes']
             self.data=self.data['data']
 
@@ -102,7 +104,8 @@ class AtomSurfaceDataset(Dataset):
                 print(f'Failed to load {idx}')
         self.list=idxs
         if self.storage!=None:
-                torch.save(self.storage, {'indexes':self.list, 'data': self.data})
+                with open(self.storage,'wb') as f:
+                    pickle.dump({'indexes':self.list, 'data': self.data}, f )
 
     def __len__(self):
         return len(self.list)
@@ -115,3 +118,34 @@ class AtomSurfaceDataset(Dataset):
             sample = self.transform(prot_dict)
 
         return prot_dict
+
+
+class CollateDict:
+    """
+       data: is a list of dicts 
+       which is to be converted 
+       to a dict of tensors 
+       with new keys corresponding to batches
+    """
+    def __init__(self, follow_batch=['atom_xyz','target_xyz'], device='cuda'):
+        self.follow_batch=follow_batch
+        self.device=device
+
+    def __call__(self, data):
+
+        result_dict = {}
+        for inc, dict_ in enumerate(data):
+            for key, value in dict_.items():   
+                if key not in result_dict:
+                    result_dict[key] = value.to(self.device)
+                else:
+                    result_dict[key] = torch.cat((result_dict[key], value.to(self.device)), dim=0)
+                if key in self.follow_batch:
+                    batch=torch.full((value.shape[0],),inc).to(self.device) 
+                    bkey=f'{key}_batch'      
+                    if bkey not in result_dict:
+                        result_dict[bkey] = batch
+                    else:
+                        result_dict[bkey] = torch.cat((result_dict[bkey], batch), dim=0)
+
+        return result_dict
