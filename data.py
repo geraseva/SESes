@@ -21,7 +21,7 @@ def encode_labels(labels,aa,onehot=0, to_tensor=True):
     if not to_tensor:
         return labels_enc
     if onehot>0:
-        labels_enc=torch.Tensor(labels_enc)
+        labels_enc=torch.LongTensor(labels_enc)
         labels_enc=F.one_hot(labels_enc,num_classes=onehot).float()
     else:
         labels_enc=torch.Tensor(labels_enc)
@@ -63,7 +63,7 @@ def load_structure_np(fname, encoders={
     p['atom_xyz'] = np.stack(p['atom_xyz'])
     for key in p:
         p[key]=np.array(p[key])
-    list_to_onehot=['atom_types']
+    list_to_onehot=['atom_types','sequence']
     mask=1 # to mask H atoms, for example
     for key in encoders:
         for aa in encoders[key]:

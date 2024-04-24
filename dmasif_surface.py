@@ -8,15 +8,28 @@ import torch.nn.functional as F
 
 from Bio.PDB import PDBParser
 
-def get_smooth_surface(fname):
+def get_smooth_surface(fname,
+    atom_rad_encoder={'H': 110, 'C': 170, 'N': 155, 'O': 152, '-': 180},
+    distance=1.05,
+    smoothness=0.5,
+    resolution=1.0,
+    nits=4,
+    sup_sampling=20,
+    variance=0.1):
     
     struct=load_structure_np(fname, center=False)
     points, normals, batch_points=atoms_to_points_normals(torch.Tensor(struct['xyz']),
                                                           torch.zeros(struct['xyz'].shape[0], dtype=int),
-                                                          atom_rad=torch.Tensor(struct['atom_rad']))
+                                                          atom_rad=torch.Tensor(struct['atom_rad']),
+                                                          distance=distance,
+                                                          smoothness=smoothness,
+                                                          resolution=resolution,
+                                                          nits=nits,
+                                                          sup_sampling=sup_sampling,
+                                                          variance=variance)
     return points, normals
 
-def load_structure_np(fname, center=False):
+def load_structure_np(fname, center=False, atom_rad_encoder={'H': 110, 'C': 170, 'N': 155, 'O': 152, '-': 180}):
     """Loads a .ply mesh to return a point cloud and connectivity."""
     # Load the data
     parser = PDBParser(QUIET=True)
@@ -39,7 +52,7 @@ def load_structure_np(fname, center=False):
     if center:
         coords = coords - np.mean(coords, axis=0, keepdims=True)
         
-    return {"xyz": coords, "types": types_array, "resnames": res, 'atom_rad': encode_radii(types_array)}
+    return {"xyz": coords, "types": types_array, "resnames": res, 'atom_rad': encode_radii(types_array, aa=atom_rad_encoder)}
 
 
 def encode_radii(labels,aa={'H': 110, 'C': 170, 'N': 155, 'O': 152, '-': 180}):
@@ -127,7 +140,7 @@ def soft_distances(x, y, batch_x, batch_y, smoothness=0.01, atom_rad=None):
 
 
     if atom_rad is not None:
-        smoothness = smoothness * atom_rad / 110
+        smoothness = smoothness * atom_rad 
         smoothness_i = LazyTensor(smoothness[:, None, None])
 
         # Compute an estimation of the mean smoothness in a neighborhood
@@ -204,7 +217,10 @@ def atoms_to_points_normals(
     batch_z = batch[:, None].repeat(1, B).view(N * B)
 
     # b) Draw N*B points at random in the neighborhood of our atoms
-    z = atoms[:, None, :] + 10 * T * torch.randn(N, B, D).type_as(atoms)
+    nb = torch.randn(N, B, D).type_as(atoms)
+    nb /= (nb**2).sum(-1, keepdim=True).sqrt()
+    z = atoms[:, None, :] + nb * atom_rad[:,None,None]
+    #z = atoms[:, None, :] + 10 * T * torch.randn(N, B, D).type_as(atoms)
     z = z.view(-1, D)  # (N*B, D)
 
 
