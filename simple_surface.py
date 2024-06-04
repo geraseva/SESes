@@ -11,7 +11,7 @@ from Bio.PDB import PDBParser
 def get_simple_surface(fname):
     
     struct=load_structure_np(fname, center=False)
-    points, normals=atoms_to_points_normals(torch.Tensor(struct['xyz']),
+    points, normals=simple_points_normals(torch.Tensor(struct['xyz']),
                                             atom_rad=torch.Tensor(struct['atom_rad']))
     return points, normals
 
@@ -72,10 +72,10 @@ def subsample(x, normals=None, scale=1.0):
     return points, norm
 
 
-def atoms_to_points_normals(
+def simple_points_normals(
     atoms,
-    resolution=1.0,
     atom_rad=None,
+    resolution=1.0,
     probe=1.4,    
     sup_sampling=300,
     reduce_mem=False,
@@ -83,8 +83,6 @@ def atoms_to_points_normals(
 ):
     N, D = atoms.shape
     B=sup_sampling
-
-    print(N, D, B)
 
     if reduce_mem:
         # draw B random points at r_atom+r_probe spheres and find non-buried
@@ -137,10 +135,10 @@ def atoms_to_points_normals(
         points = points[mask]
         normals = normals[mask]
 
-        # move points to r_atom spheres
-        points -= probe*normals
-
     # subsample the point cloud
     points, normals = subsample(points, normals, scale=resolution)
+    # move points to r_atom spheres
+    points -= probe*normals
+
 
     return points, normals

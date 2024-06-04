@@ -154,7 +154,9 @@ def computeMSMS(pdb_file):
 
     # Now run MSMS on xyzrn file
     FNULL = open(os.devnull, 'w')
-    args = ['msms', "-density", "3.0", "-hdensity", "3.0", "-probe",\
+    MSMS_BIN='/home/domain/data/prog/miniconda3/envs/dmasif_upd/bin/msms'
+    #MSMS_BIN='msms'
+    args = [MSMS_BIN, "-density", "3.0", "-hdensity", "3.0", "-probe",\
                     "1.5", "-if",out_xyzrn,"-of",file_base, "-af", file_base]
     #print msms_bin+" "+`args`
     p2 = Popen(args, stdout=PIPE, stderr=PIPE)

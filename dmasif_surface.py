@@ -220,13 +220,20 @@ def atoms_to_points_normals(
     nb = torch.randn(N, B, D).type_as(atoms)
     nb /= (nb**2).sum(-1, keepdim=True).sqrt()
     z = atoms[:, None, :] + nb * atom_rad[:,None,None]
-    #z = atoms[:, None, :] + 10 * T * torch.randn(N, B, D).type_as(atoms)
-    z = z.view(-1, D)  # (N*B, D)
+
+    # balance number of samples for every atom radius
+    mask=F.one_hot((atom_rad*B/5.4).round().to(int), 
+                   num_classes=B).cumsum(axis=1).to(bool).view(-1)
+
+    z = z.view(-1, D)[~mask]  
+    batch_z = batch_z[~mask]
 
 
     # We don't want to backprop through a full network here!
     atoms = atoms.detach().contiguous()
     z = z.detach().contiguous()
+    batch_z = batch_z.detach().contiguous()
+    atom_rad=atom_rad.detach().contiguous()
 
     # N.B.: Test mode disables the autograd engine: we must switch it on explicitely.
     with torch.enable_grad():

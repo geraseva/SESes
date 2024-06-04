@@ -102,7 +102,7 @@ def hausdorff_distance(x, y, x_normals=None, y_normals=None, x_batch=None, y_bat
 
 class Distribution:
 
-    def __init__(self, r=1.05, reduction=None):
+    def __init__(self, r=1.05, reduction='max'):
         self.r=r
         self.reduction=reduction
 
